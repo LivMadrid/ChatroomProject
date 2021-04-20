@@ -28,7 +28,7 @@ class Server(threading.Thread):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         #binds the socket object to a socket address on the server bind (IP Address(str), Port Number(int)) takes in tuples 
-        sock.bind(self.host, self.port)
+        sock.bind((self.host, self.port))
 
         #TCP uses two kinds of sockets: listening and connected 
         #after calling listen() on socket  it can only establish coneection of 'handshakes' but not data transfer (need new socket for client connection)
@@ -60,3 +60,66 @@ class Server(threading.Thread):
             #way for server to manage all the active client connections - stores in self.connections
             self.connections.append(server_socket)
             print('Ready to receive messages from', sc.getpeername())
+
+    def broadcast(self, message, source):
+        #How it works: 1. client sends message -> server (GUI or commandline) 2. Server recieves and processes message
+        #3. server sends message to all connected clients 4. clients will display mesage in command line or GUI 
+        #broadcast is a misnomer --- really sending many 'unicasts' one to one transission to each connected client. 
+
+        #self.connections is a list of ServerSocket objects (active client connections)
+        for connection in self.connections:
+
+            #send to all connected clients except source 
+            if connection.sockname != source:
+                connection.send(message)
+
+class ServerSocket(threading.Thread):
+    #class facilitates communication with indv. clients 
+
+    def __init__(self, sc, socketname, server):
+        super().__init__()
+        self.sc = sc
+        self.sockname = socketname
+        self.server = server
+
+    def run(self):
+
+        #infinite loop - listening for data sent by the client
+        while True:
+            message = self.sc.recv(1024).decode('ascii')
+            if message:
+                print(f'{self.sockname} says {message}')
+                self.server.broadcast(message, self.sockname)
+            else:
+                #client closed the socket - exit thread
+                print(f'{self.socketname} has closed the connection')
+                self.sc.close()
+                server.remove_connection(self)
+                return 
+
+    def send(self, message):
+        self.sc.sendall(message.encode('ascii'))
+
+    def exit(server):
+        #when a client socket is closed it returns an empty string - removed the ServerSocket thread from the list of active connections/end thread
+        while True:
+            ipt = input('')
+            if ipt == 'q':
+                print('Closing all connections...')
+                for connection in server.connections:
+                    connection.sc.close()
+                print('Shutting down the server...')
+                os._exit(0)
+
+    # if __name__ == '__main__':
+    #     parser = argparse.ArgumentParser(description='Chatroom Server')
+    #     parser.add_argument('host', help='Interface the server listens at')
+    #     parser.add_argument('-p', metavar='PORT', type=int, default=1060, help='TCP port (default 1060)')
+    #     args = parser.parse_args()
+
+    #     #create and start server thread
+    #     server = Server(args.host, args.p)
+    #     server.start()
+
+    #     exit = threading.Thread(target = exit, args = (server,))
+    #     exit.start()
