@@ -45,7 +45,7 @@ class Server(threading.Thread):
             sc, sockname = sock.accept()
 
             #getpeername() returns socket address on other end of connection (client) while getsockname() returns socket address to which socket object is bound
-            print('Accepted a new connection from {} to {}'.format(sc.getpeername(), sc.getsockname()))
+            print(f'Accepted a new connection from {sc.getpeername()} to {sc.getsockname()}')
             # print(f'Accepted a new Connection from {} to {}') how to format this in an f string with sc.getpeername etc.? 
 
             #create a new thread 
@@ -111,15 +111,15 @@ class ServerSocket(threading.Thread):
                 print('Shutting down the server...')
                 os._exit(0)
 
-    # if __name__ == '__main__':
-    #     parser = argparse.ArgumentParser(description='Chatroom Server')
-    #     parser.add_argument('host', help='Interface the server listens at')
-    #     parser.add_argument('-p', metavar='PORT', type=int, default=1060, help='TCP port (default 1060)')
-    #     args = parser.parse_args()
+    if __name__ == '__main__':
+        parser = argparse.ArgumentParser(description='Chatroom Server')
+        parser.add_argument('host', help='Interface the server listens at')
+        parser.add_argument('-p', metavar='PORT', type=int, default=1060, help='TCP port (default 1060)')
+        args = parser.parse_args()
 
-    #     #create and start server thread
-    #     server = Server(args.host, args.p)
-    #     server.start()
+        #create and start server thread
+        server = Server(args.host, args.p)
+        server.start()
 
-    #     exit = threading.Thread(target = exit, args = (server,))
-    #     exit.start()
+        exit = threading.Thread(target = exit, args = (server,))
+        exit.start()
