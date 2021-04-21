@@ -1,7 +1,8 @@
 #Similar to the server.py we are using multithreading to send and recieve calls alongside one another (real-time chat isstead of alt. between send/recieve)
 # the Send class thread is always listening for user input (from command line -> gui coming later)
 
-
+#tutorial/help from https://dev.to/zeyu2001/build-a-chatroom-app-with-python-44fa
+#information on threading @ Real Python https://realpython.com/intro-to-python-threading/#what-is-a-thread
 
 import threading 
 import socket
@@ -11,6 +12,13 @@ import sys
 
 
 class Send(threading.Thread):
+    """ Sending thread listens for client input from command line/GUI
+
+        Attributes: 
+        sock (socket.socket) -- the connected socket object
+        name -- name provided by the client
+    """
+
     #Send class inherits from Python threading.Thread class - initializing a thread. 
     #when calling start() on a Send/Receive object then run() will be completed in parallel to existing thread 
     def __init__(self, sock, name):
@@ -19,13 +27,15 @@ class Send(threading.Thread):
         self.name = name 
 
     def run(self):
+        """Listens for client input and sends to the server 
+        Type QUIT and the connection will close and exit server """
 
         while True:
             message = input(f'{self.name}: ')
 
             #Type 'QUIT' to leave chat
             if message == 'QUIT':
-                self.sock.sendall(f'Server: {self.name}'.encode() + f' has left the chat.')
+                self.sock.sendall(f'Server: {self.name} has left the chat.'.encode())
                 break
 
             #send message to server for broadcasting 
@@ -37,6 +47,11 @@ class Send(threading.Thread):
         os._exit(0)
 
 class Receive(threading.Thread):
+    """ Listens for incoming messages 
+        Attributes: 
+        sock (socket.socket) -- the connected active socket object
+        name -- name inputed by client
+    """
   #Receive class inherits from Python threading.Thread class - initializing a thread. 
     #when calling start() on a Send/Receive object then run() will be completed in parallel to existing thread 
    
@@ -46,11 +61,12 @@ class Receive(threading.Thread):
         self.name = name 
 
     def run(self):
-
+        """Receives info from server and displays it in commandline/GUI
+            Listening for incoming data until socket is closed on either side"""
         while True:
             message = self.sock.recv(1024)
             if message:
-                # .decode()
+                # #########.decode() ---- This doesn't work when I put in after f-string on line 69.. Why? Learn more about encode/decode and f-strings##############
                 print(f'{message} \n {self.name}', end = '')
             else:
                 #Server has closed the socket: exit program
@@ -62,13 +78,24 @@ class Receive(threading.Thread):
 #connecting to the server: 
 
 class Client:
-
+    """Management of client-server connections 
+        Attributes:
+        host -- IP address of server's listening socket
+        port -- Port num of server's listening socket
+        sock (socket.socket) -- connected active socket object 
+        name -- client name input
+    """
     def __init__(self, host, port):
         self.host = host
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def start(self):
+        """Initializes the client/server connection. Gets client name input.
+            Creates/Initializes Send/Recieve threads
+            Sends data to other connected clients
+            A Receive class object is returned - from the receiving thread """
+
         print(f'Trying to connect to {self.host} : {self.port} ')
         # client calls .connect() method to connect a certain socket address (a tuple) of the server 
         #if the socket is not ready to receive connections (ex. server not running yet) then .connect() will FAIL

@@ -7,6 +7,11 @@ import argparse
 import os
 
 class Server(threading.Thread):
+    """ Management of server connections
+        Attributes:
+        connections (list) -- list of ServerSocket objects -- the active connections
+        host -- the IP Address of listening socket
+        port -- the port num of listening socket"""
     #server class inherits from Python threading.Thread class - initializing a thread. 
     #when start() is called on a server object then run() will be completed in parallel to existing thread 
     #what is threading?! Threading allows you to run two or more different parts of program simultaneously (or appear to in python 3)-"multithreading"
@@ -17,6 +22,9 @@ class Server(threading.Thread):
         self.port = port
 
     def run(self):
+        """Initializes listening socket 
+            As connections join a ServerSocket thread is created to communicate with that client 
+            ServerSocket objects are stored in connections attribute"""
         #Sockets --- An IP address(HOST) and a port number(identifies the application that should recieve data) pair 
         #(perhaps similar to devices used at TDA - connecting IPs of smart devices to home network ports)
         # Source (IP: Port Num) --> Destination (IP: Port Num)
@@ -62,6 +70,10 @@ class Server(threading.Thread):
             print('Ready to receive messages from', sc.getpeername())
 
     def broadcast(self, message, source):
+        """Sends a message to all active connection clients except source
+            ARGS:
+            message -- message to broadcast
+            source --(tuple IP:PORT) socket address of source client"""
         #How it works: 1. client sends message -> server (GUI or commandline) 2. Server recieves and processes message
         #3. server sends message to all connected clients 4. clients will display mesage in command line or GUI 
         #broadcast is a misnomer --- really sending many 'unicasts' one to one transission to each connected client. 
@@ -74,7 +86,11 @@ class Server(threading.Thread):
                 connection.send(message)
 
 class ServerSocket(threading.Thread):
-    #class facilitates communication with indv. clients 
+    """ServerSocket class facilitates communication with indv. clients 
+        Attributes:
+        sc (socket.socket) -- the connected socket 
+        sockname (tuple: IP:PORT) -- client socket address
+        server -- the parent thread"""
 
     def __init__(self, sc, socketname, server):
         super().__init__()
@@ -83,8 +99,11 @@ class ServerSocket(threading.Thread):
         self.server = server
 
     def run(self):
+        """Receives data from active connected clients - broadcasts messages to other clients
+            When clients exit connection - closes the socket and removes itself from the list
+            of ServerSocekt threads in the main server thread"""
 
-        #infinite loop - listening for data sent by the client
+        #infinite loop - always listening for data sent by the client
         while True:
             message = self.sc.recv(1024).decode('ascii')
             if message:
@@ -101,6 +120,7 @@ class ServerSocket(threading.Thread):
         self.sc.sendall(message.encode('ascii'))
 
     def exit(server):
+        """Shuts down the server by typing q -- closes all connections and exits"""
         #when a client socket is closed it returns an empty string - removed the ServerSocket thread from the list of active connections/end thread
         while True:
             ipt = input('')
